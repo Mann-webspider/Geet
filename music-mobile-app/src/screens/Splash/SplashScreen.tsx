@@ -44,16 +44,17 @@ export const SplashScreen: React.FC = () => {
       }
 
       // 3) validate token
-      const result = await hydrateFromToken(storedToken);
+     const result = await hydrateFromToken(storedToken);
 
-      if (result === 'ok') {
-        router.replace('/(app)');
-      } else if (result === 'unauthorized') {
-        router.replace('/login');
-      } else {
-        setError('Failed to validate session');
-        setState('error');
-      }
+if (result === 'ok') {
+  router.replace('/(app)');      // or your app home
+} else if (result === 'unauthorized') {
+  router.replace('/login');      // force login
+} else {
+  setError('Failed to validate session');
+  setState('error');
+}
+
     } catch (e: any) {
       setError(e.message ?? 'Failed to reach server');
       setState('error');

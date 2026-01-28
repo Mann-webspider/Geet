@@ -22,6 +22,17 @@ async function seed() {
       passwordHash,
     })
     .returning();
+  
+  const [admin] = await db
+  .insert(users)
+  .values({
+    email: "admin@example.com",
+    username: "Admin",
+    passwordHash: await hashPassword("admin123"),
+    isAdmin: true,
+  })
+  .returning();
+
 
   await db.insert(playlists).values([
     {

@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import cors from "cors";
 import helmet from "helmet";
 import { setupRoutes } from "./routes";
@@ -12,7 +13,8 @@ export function createApp() {
   app.use(express.json());
   app.use(requestLogger);
 
-  
+  app.use("/media", express.static(path.join(process.cwd(), "media")));
+
   app.get("/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });

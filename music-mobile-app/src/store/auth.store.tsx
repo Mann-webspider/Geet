@@ -48,20 +48,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await AsyncStorage.removeItem(TOKEN_KEY);
   };
 
-  const hydrateFromToken = async (tokenArg: string): Promise<HydrateResult> => {
-    try {
-      const me = await authApi.getMe(tokenArg);
-      setToken(tokenArg);
-      setUser(me);
-      return 'ok';
-    } catch (e: any) {
-      if (e?.type === 'unauthorized') {
-        await clearAuth();
-        return 'unauthorized';
-      }
-      return 'error';
+ const hydrateFromToken = async (tokenArg: string): Promise<'ok' | 'unauthorized' | 'error'> => {
+  try {
+    const me = await authApi.getMe(tokenArg);
+    setToken(tokenArg);
+    setUser(me);
+    return 'ok';
+  } catch (e: any) {
+    if (e?.type === 'unauthorized') {
+      await clearAuth(); // remove token + user from store + AsyncStorage
+      return 'unauthorized';
     }
-  };
+    return 'error';
+  }
+};
+
 
   return (
     <AuthContext.Provider value={{ token, user, isHydrating, setAuth, clearAuth, hydrateFromToken }}>

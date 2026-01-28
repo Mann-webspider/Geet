@@ -12,12 +12,41 @@ export type Playlist = {
   totalDuration: number; // seconds
 };
 
+export type Track = {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  fileUrl: string;
+  coverArtUrl: string | null;
+  genre: string;
+  releaseYear: number;
+  isExplicit: boolean;
+};
+
+export type PlaylistTrackItem = {
+  id: string;
+  position: number;
+  addedAt: string;
+  track: {
+    id: string;
+    title: string;
+    artist: string;
+    duration: number;
+    coverArtUrl: string | null;
+  };
+};
+
+// extend existing
 export type PlaylistDetail = Playlist & {
   createdAt: string;
   updatedAt: string;
   owner: { id: string };
-  tracks: any[]; // refine later
+  tracks: PlaylistTrackItem[];
 };
+
+
 
 type SuccessEnvelope<T> = {
   status: 'success';
@@ -91,5 +120,27 @@ export const playlistApi = {
       token,
     );
     if (res.status !== 'success') throw new Error('Failed to delete playlist');
+  },
+   async addTrackToPlaylist(
+    token: string,
+    playlistId: string,
+    trackId: string,
+  ): Promise<void> {
+    await apiClient.post<SuccessEnvelope<unknown>>(
+      `/v1/playlists/${playlistId}/tracks`,
+      { trackId },
+      token,
+    );
+  },
+
+  async removeTrackFromPlaylist(
+    token: string,
+    playlistId: string,
+    playlistTrackId: string,
+  ): Promise<void> {
+    await apiClient.delete<SuccessEnvelope<unknown>>(
+      `/v1/playlists/${playlistId}/tracks/${playlistTrackId}`,
+      token,
+    );
   },
 };

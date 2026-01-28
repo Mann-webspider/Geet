@@ -22,7 +22,7 @@ export const users = pgTable(
 
     isPremium: boolean("is_premium").default(false),
     isVerified: boolean("is_verified").default(false),
-
+    isAdmin: boolean("is_admin").default(false),
     createdAt: timestamp("created_at", { withTimezone: false })
       .defaultNow()
       .notNull(),
@@ -35,6 +35,7 @@ export const users = pgTable(
     emailIdx: uniqueIndex("idx_users_email").on(table.email),
     usernameIdx: uniqueIndex("idx_users_username").on(table.username),
     verifiedIdx: index("idx_users_verified").on(table.isVerified),
+    adminIdx: index("idx_users_admin").on(table.isAdmin),
   })
 );
 
@@ -132,6 +133,51 @@ export const playlistTracks = pgTable(
     ),
   })
 );
+export const listenHistory = pgTable(
+  "listen_history",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+
+    playlistId: uuid("playlist_id").references(() => playlists.id, {
+      onDelete: "set null",
+    }),
+
+    // How much of the track was played (0-100%)
+    completionPercentage: integer("completion_percentage").default(0),
+
+    // Total seconds listened in this session
+    duration: integer("duration").default(0),
+
+    listenedAt: timestamp("listened_at").defaultNow().notNull(),
+
+    // Device/platform info (optional)
+    platform: varchar("platform", { length: 50 }), // e.g., "mobile", "web"
+    deviceId: varchar("device_id", { length: 255 }),
+  },
+  (table) => ({
+    userIdx: index("idx_listen_history_user").on(table.userId),
+    trackIdx: index("idx_listen_history_track").on(table.trackId),
+    listenedAtIdx: index("idx_listen_history_listened_at").on(
+      table.listenedAt
+    ),
+    userTrackIdx: index("idx_listen_history_user_track").on(
+      table.userId,
+      table.trackId
+    ),
+  })
+);
+
+export type ListenHistory = typeof listenHistory.$inferSelect;
+export type NewListenHistory = typeof listenHistory.$inferInsert;
+
 
 export type PlaylistTrack = typeof playlistTracks.$inferSelect;
 export type NewPlaylistTrack = typeof playlistTracks.$inferInsert;

@@ -7,10 +7,12 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  Alert,
+  FlatList
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuthStore } from '../../store/auth.store';
-import { playlistApi, type PlaylistDetail } from '../../api/playlist.api';
+import { playlistApi, type PlaylistDetail ,PlaylistTrackItem } from '../../api/playlist.api';
 
 type ScreenState = 'loading' | 'success' | 'error';
 
@@ -74,11 +76,59 @@ export const PlaylistDetailsScreen: React.FC = () => {
       </View>
     );
   }
-
+  
   const isPublicLabel = playlist.isPublic ? 'Public' : 'Private';
   const collabLabel = playlist.isCollaborative ? 'Collaborative' : 'Personal';
   const isOwner = user?.id === playlist.owner.id; // ensure user from auth store
 
+
+  const canEditTracks = isOwner || playlist.isCollaborative;
+
+const onRemoveTrack = (item: PlaylistTrackItem) => {
+  if (!token) return;
+  Alert.alert(
+    'Remove track',
+    `Remove "${item.track.title}" from this playlist?`,
+    [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await playlistApi.removeTrackFromPlaylist(
+              token,
+              playlist.id,
+              item.id,
+            );
+            // re-fetch playlist
+            await load();
+          } catch (e: any) {
+            Alert.alert('Error', e.message ?? 'Failed to remove track');
+          }
+        },
+      },
+    ],
+  );
+};
+
+const renderPlaylistTrack = ({ item }: { item: PlaylistTrackItem }) => (
+  <View style={styles.trackRow}>
+    <Text style={styles.trackPosition}>{item.position}</Text>
+    <View style={styles.trackBody}>
+      <Text style={styles.trackTitle}>{item.track.title}</Text>
+      <Text style={styles.trackArtist}>{item.track.artist}</Text>
+    </View>
+    <Text style={styles.trackDuration}>
+      {formatDuration(item.track.duration)}
+    </Text>
+    {canEditTracks && (
+      <TouchableOpacity onPress={() => onRemoveTrack(item)}>
+        <Text style={styles.removeText}>Remove</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+);
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <TouchableOpacity onPress={() => router.back()}>
@@ -125,13 +175,19 @@ export const PlaylistDetailsScreen: React.FC = () => {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tracks</Text>
-        <View style={styles.tracksPlaceholder}>
-          <Text style={styles.tracksPlaceholderText}>
-            Track list will appear here later.
-          </Text>
-        </View>
-      </View>
+  <Text style={styles.sectionTitle}>Tracks</Text>
+  {playlist.tracks.length === 0 ? (
+    <Text style={styles.tracksPlaceholderText}>
+      No tracks in this playlist yet.
+    </Text>
+  ) : (
+    <FlatList
+      data={playlist.tracks}
+      keyExtractor={(t) => t.id}
+      renderItem={renderPlaylistTrack}
+    />
+  )}
+</View>
     </ScrollView>
   );
 };
@@ -203,4 +259,16 @@ const styles = StyleSheet.create({
   borderColor: '#444',
 },
 editButtonText: { color: '#fff', fontSize: 14 },
+trackRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingVertical: 8,
+},
+trackPosition: { color: '#666', width: 24 },
+trackBody: { flex: 1 },
+trackTitle: { color: '#fff', fontSize: 14 },
+trackArtist: { color: '#aaa', fontSize: 12 },
+trackDuration: { color: '#999', width: 60, textAlign: 'right', marginRight: 8 },
+removeText: { color: '#ff6b6b', fontSize: 12 },
+
 });

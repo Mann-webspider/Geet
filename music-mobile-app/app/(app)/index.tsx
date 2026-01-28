@@ -24,6 +24,17 @@ export default function HomeScreen() {
         <Text style={styles.cardSubtitle}>View and manage your music</Text>
       </TouchableOpacity>
 
+      // in app/(app)/index.tsx
+<TouchableOpacity
+  style={styles.card}
+  onPress={() => router.push('/(app)/browse')}
+>
+  <Text style={styles.cardIcon}>🔎</Text>
+  <Text style={styles.cardTitle}>Browse Tracks</Text>
+  <Text style={styles.cardSubtitle}>Find music to add to playlists</Text>
+</TouchableOpacity>
+
+
       <Button title="Log out" onPress={logout} color="#ff6b6b" />
     </View>
   );
