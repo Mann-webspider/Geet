@@ -1,9 +1,11 @@
 // src/store/auth.store.tsx
 import React, { useEffect, useState, createContext, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { AuthResult, AuthUser } from '../api/auth.api';
+import { authApi, type AuthResult, type AuthUser } from '../api/auth.api';
 
 const TOKEN_KEY = '@geet_token';
+
+type HydrateResult = 'ok' | 'unauthorized' | 'error';
 
 type AuthContextValue = {
   token: string | null;
@@ -11,6 +13,7 @@ type AuthContextValue = {
   isHydrating: boolean;
   setAuth: (auth: AuthResult) => Promise<void>;
   clearAuth: () => Promise<void>;
+  hydrateFromToken: (token: string) => Promise<HydrateResult>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -20,19 +23,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isHydrating, setIsHydrating] = useState(true);
 
+  // initial token read (but not /me yet)
   useEffect(() => {
-    const hydrate = async () => {
+    const hydrateToken = async () => {
       try {
-        const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
-        if (storedToken) {
-          setToken(storedToken);
-          // user stays null for now; /me will fill it later
-        }
+        const stored = await AsyncStorage.getItem(TOKEN_KEY);
+        if (stored) setToken(stored);
       } finally {
         setIsHydrating(false);
       }
     };
-    hydrate();
+    hydrateToken();
   }, []);
 
   const setAuth = async (auth: AuthResult) => {
@@ -47,8 +48,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await AsyncStorage.removeItem(TOKEN_KEY);
   };
 
+  const hydrateFromToken = async (tokenArg: string): Promise<HydrateResult> => {
+    try {
+      const me = await authApi.getMe(tokenArg);
+      setToken(tokenArg);
+      setUser(me);
+      return 'ok';
+    } catch (e: any) {
+      if (e?.type === 'unauthorized') {
+        await clearAuth();
+        return 'unauthorized';
+      }
+      return 'error';
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ token, user, isHydrating, setAuth, clearAuth }}>
+    <AuthContext.Provider value={{ token, user, isHydrating, setAuth, clearAuth, hydrateFromToken }}>
       {children}
     </AuthContext.Provider>
   );

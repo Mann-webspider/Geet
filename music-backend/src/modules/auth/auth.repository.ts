@@ -9,7 +9,6 @@ export class AuthRepository {
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
-
     return user ?? null;
   }
 
@@ -26,12 +25,15 @@ export class AuthRepository {
         passwordHash: input.passwordHash,
       })
       .returning();
-
     return user;
   }
-  async findById(id: string) {
-  const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
-  return user ?? null;
-}
 
+  async findById(id: string) {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    return user ?? null;
+  }
 }

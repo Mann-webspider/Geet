@@ -8,6 +8,7 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  integer,
 } from "drizzle-orm/pg-core";
 
 // USERS TABLE
@@ -37,7 +38,7 @@ export const users = pgTable(
   })
 );
 
-// PLAYLISTS TABLE
+
 export const playlists = pgTable(
   "playlists",
   {
@@ -53,33 +54,47 @@ export const playlists = pgTable(
     isPublic: boolean("is_public").default(false),
 
     coverArtUrl: varchar("cover_art_url", { length: 512 }),
-    playlistType: varchar("playlist_type", { length: 50 }).default("personal"),
 
-    eventDate: timestamp("event_date", { withTimezone: false }),
-    eventLocation: varchar("event_location", { length: 255 }),
+    trackCount: integer("track_count").default(0).notNull(),
+    totalDuration: integer("total_duration").default(0).notNull(), // seconds
 
-    // versioning
-    version: varchar("version", { length: 50 }).default("0"),
-    lastModifiedBy: uuid("last_modified_by").references(() => users.id),
-    lastModifiedAt: timestamp("last_modified_at", { withTimezone: false }),
-
-    // stats
-    totalDuration: varchar("total_duration", { length: 50 }).default("0"),
-    trackCount: varchar("track_count", { length: 50 }).default("0"),
-    followerCount: varchar("follower_count", { length: 50 }).default("0"),
-
-    createdAt: timestamp("created_at", { withTimezone: false })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: false })
-      .defaultNow()
-      .notNull(),
-    deletedAt: timestamp("deleted_at", { withTimezone: false }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => ({
     creatorIdx: index("idx_playlists_creator").on(table.creatorId),
-    collabIdx: index("idx_playlists_collaborative").on(table.isCollaborative),
-    versionIdx: index("idx_playlists_version").on(table.id, table.version),
+    publicIdx: index("idx_playlists_public").on(table.isPublic),
+  })
+);
+
+export const tracks = pgTable(
+  "tracks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    
+    title: varchar("title", { length: 255 }).notNull(),
+    artist: varchar("artist", { length: 255 }).notNull(),
+    album: varchar("album", { length: 255 }),
+    
+    duration: integer("duration").notNull(), // seconds
+    
+    fileUrl: varchar("file_url", { length: 512 }).notNull(), // S3/CDN URL
+    coverArtUrl: varchar("cover_art_url", { length: 512 }),
+    
+    genre: varchar("genre", { length: 100 }),
+    releaseYear: integer("release_year"),
+    
+    isExplicit: boolean("is_explicit").default(false),
+    
+    playCount: integer("play_count").default(0).notNull(),
+    
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    titleIdx: index("idx_tracks_title").on(table.title),
+    artistIdx: index("idx_tracks_artist").on(table.artist),
+    genreIdx: index("idx_tracks_genre").on(table.genre),
   })
 );
 
@@ -92,19 +107,17 @@ export const playlistTracks = pgTable(
       .notNull()
       .references(() => playlists.id, { onDelete: "cascade" }),
 
-    trackId: uuid("track_id").notNull(), // will reference tracks table later
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
 
-    position: varchar("position", { length: 50 }).notNull(),
-    oldPosition: varchar("old_position", { length: 50 }),
+    position: integer("position").notNull(), // simpler than varchar for now
 
     addedByUserId: uuid("added_by_user_id")
       .notNull()
       .references(() => users.id),
-    addedAt: timestamp("added_at", { withTimezone: false })
-      .defaultNow()
-      .notNull(),
 
-    version: varchar("version", { length: 50 }).notNull(),
+    addedAt: timestamp("added_at").defaultNow().notNull(),
   },
   (table) => ({
     playlistIdx: index("idx_playlist_tracks_playlist").on(table.playlistId),
@@ -113,15 +126,22 @@ export const playlistTracks = pgTable(
       table.playlistId,
       table.position
     ),
-    uniquePosition: uniqueIndex("uq_playlist_position").on(
+    uniquePosition: index("uq_playlist_position").on(
       table.playlistId,
       table.position
     ),
   })
 );
 
-export type Playlist = typeof playlists.$inferSelect;
 export type PlaylistTrack = typeof playlistTracks.$inferSelect;
+export type NewPlaylistTrack = typeof playlistTracks.$inferInsert;
+
+
+export type Track = typeof tracks.$inferSelect;
+export type NewTrack = typeof tracks.$inferInsert;
+
+export type Playlist = typeof playlists.$inferSelect;
+export type NewPlaylist = typeof playlists.$inferInsert;
 
 
 // TS types

@@ -17,6 +17,15 @@ class ApiClient {
     });
   }
 
+  private handleError(err: any): never {
+    const status = err?.response?.status;
+    const message =
+      err?.response?.data?.message ||
+      err?.message ||
+      'Unknown error';
+    throw { message, status } as ApiErrorShape;
+  }
+
   async get<T>(url: string, token?: string): Promise<T> {
     try {
       const res = await this.client.get<T>(url, {
@@ -24,12 +33,7 @@ class ApiClient {
       });
       return res.data;
     } catch (err: any) {
-      const status = err?.response?.status;
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Unknown error';
-      throw { message, status } as ApiErrorShape;
+      this.handleError(err);
     }
   }
 
@@ -40,12 +44,29 @@ class ApiClient {
       });
       return res.data;
     } catch (err: any) {
-      const status = err?.response?.status;
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Unknown error';
-      throw { message, status } as ApiErrorShape;
+      this.handleError(err);
+    }
+  }
+
+  async patch<T>(url: string, body: unknown, token?: string): Promise<T> {
+    try {
+      const res = await this.client.patch<T>(url, body, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      return res.data;
+    } catch (err: any) {
+      this.handleError(err);
+    }
+  }
+
+  async delete<T>(url: string, token?: string): Promise<T> {
+    try {
+      const res = await this.client.delete<T>(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      return res.data;
+    } catch (err: any) {
+      this.handleError(err);
     }
   }
 }

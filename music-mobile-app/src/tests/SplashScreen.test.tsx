@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react';
+// src/screens/Splash/SplashScreen.tsx
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ActivityIndicator, Button, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import { apiClient } from '../../api/client';
-import { useAuthStore } from '../../store/auth.store';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import {  apiClient } from '../api/client';
+import { useAuthStore } from '../store/auth.store';
+import type { RootStackParamList } from '../types/navigation';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 type SplashState = 'loading' | 'error';
 
@@ -16,17 +20,29 @@ type AppConfigResponse = {
 
 const TOKEN_KEY = '@geet_token';
 
-export const SplashScreen: React.FC = () => {
+export const SplashScreen: React.FC<Props> = ({ navigation }) => {
   const { hydrateFromToken } = useAuthStore();
   const [state, setState] = useState<SplashState>('loading');
   const [error, setError] = useState<string | null>(null);
 
-  const runOnce = async () => {
+  const goAuth = () =>
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'AuthStack' }],
+    });
+
+  const goApp = () =>
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'AppStack' }],
+    });
+
+  const run = useCallback(async () => {
     setState('loading');
     setError(null);
 
     try {
-      // 1) health + config
+      // 1) check backend health + config
       const [health, config] = await Promise.all([
         apiClient.get<HealthResponse>('/health'),
         apiClient.get<AppConfigResponse>('/v1/app-config'),
@@ -36,33 +52,33 @@ export const SplashScreen: React.FC = () => {
         throw new Error('Invalid backend response');
       }
 
-      // 2) token
+      // 2) read token
       const storedToken = await AsyncStorage.getItem(TOKEN_KEY);
       if (!storedToken) {
-        router.replace('/login');
+        goAuth();
         return;
       }
 
-      // 3) validate token
+      // 3) validate token via /me
       const result = await hydrateFromToken(storedToken);
 
       if (result === 'ok') {
-        router.replace('/(app)');
+        goApp();
       } else if (result === 'unauthorized') {
-        router.replace('/login');
+        goAuth();
       } else {
-        setError('Failed to validate session');
-        setState('error');
+        // 'error' → network/server issue during /me
+        throw new Error('Failed to validate session');
       }
     } catch (e: any) {
       setError(e.message ?? 'Failed to reach server');
       setState('error');
     }
-  };
+  }, [hydrateFromToken, navigation]);
 
   useEffect(() => {
-    runOnce();
-  }, []);
+    run();
+  }, [run]);
 
   if (state === 'loading') {
     return (
@@ -78,7 +94,7 @@ export const SplashScreen: React.FC = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Geet</Text>
       <Text style={styles.error}>{error}</Text>
-      <Button title="Retry" onPress={runOnce} />
+      <Button title="Retry" onPress={run} />
     </View>
   );
 };

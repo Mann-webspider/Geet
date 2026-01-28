@@ -53,4 +53,20 @@ export const authApi = {
       throw new Error(err.message || 'Login failed');
     }
   },
+  async getMe(token: string): Promise<AuthUser> {
+    try {
+      const res = await apiClient.get<SuccessEnvelope<{ id: string; email: string; username: string }>>(
+        '/v1/auth/me',
+        token,
+      );
+      if (res.status !== 'success') throw new Error('Unauthorized');
+      return res.data;
+    } catch (e: any) {
+      const err = e as ApiErrorShape & { status?: number };
+      if (err.status === 401) {
+        throw { type: 'unauthorized', message: err.message || 'Unauthorized' } as const;
+      }
+      throw { type: 'error', message: err.message || 'Failed to load session' } as const;
+    }
+  },
 };

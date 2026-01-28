@@ -5,6 +5,7 @@ import { hashPassword, verifyPassword } from "./password.util.";
 import { signToken } from "./jwt.util";
 import { logger } from "../../config/logger";
 import type { LoginRequest, SignupRequest } from "./auth.types";
+import { type AuthenticatedRequest } from "../../middleware/auth";
 
 const authRepo = new AuthRepository();
 
@@ -217,11 +218,11 @@ export const AuthController = {
     }
   },
 
-  async me(req: Request, res: Response) {
+  async me(req: AuthenticatedRequest, res: Response) {
     const startedAt = Date.now();
 
     try {
-      const userId = (req as any).user?.id as string | undefined;
+      const userId = req.user?.id;
 
       logger.info(
         {
@@ -246,7 +247,8 @@ export const AuthController = {
         });
       }
 
-      const user = await authRepo.findById?.(userId); // add findById to repo
+      const user = await authRepo.findById(userId);
+
       if (!user) {
         logger.warn(
           {
@@ -295,4 +297,12 @@ export const AuthController = {
       });
     }
   },
+
+  async logout(req: AuthenticatedRequest, res: Response) {
+    // Since we're using stateless JWTs, logout can be handled on the client side
+    return res.json({
+      status: "success",
+      message: "Logged out successfully",
+    });
+  }
 };
