@@ -6,6 +6,7 @@ import { signToken } from "./jwt.util";
 import { logger } from "../../config/logger";
 import type { LoginRequest, SignupRequest } from "./auth.types";
 import { type AuthenticatedRequest } from "../../middleware/auth";
+import { is } from "drizzle-orm";
 
 const authRepo = new AuthRepository();
 
@@ -197,6 +198,9 @@ export const AuthController = {
           email: user.email,
           username: user.username,
           token,
+          isAdmin: user.isAdmin,
+          isPremium: user.isPremium,
+          
         },
       });
     } catch (error: any) {
@@ -278,6 +282,8 @@ export const AuthController = {
           id: user.id,
           email: user.email,
           username: user.username,
+          isAdmin: user.isAdmin,
+          isPremium: user.isPremium,
         },
       });
     } catch (error: any) {

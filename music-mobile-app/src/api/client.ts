@@ -15,6 +15,8 @@ class ApiClient {
       timeout: API_CONFIG.TIMEOUT_MS,
       headers: { 'Content-Type': 'application/json' },
     });
+    console.log(API_CONFIG.BASE_URL);
+    
   }
 
   private handleError(err: any): never {

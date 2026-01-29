@@ -1,6 +1,9 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../modules/auth/jwt.util";
 import { logger } from "../config/logger";
+import { db } from "../config/db";
+import { users } from "../database/schema";
+import { eq } from "drizzle-orm";
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -8,7 +11,7 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-export function authMiddleware(
+export async function authMiddleware(
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
@@ -22,10 +25,6 @@ export function authMiddleware(
         event: "auth_middleware_missing_token",
         path: req.originalUrl || req.url,
         method: req.method,
-        ip:
-          (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
-          req.socket.remoteAddress ||
-          null,
       },
       "Auth middleware: missing or invalid Authorization header"
     );
@@ -40,6 +39,27 @@ export function authMiddleware(
 
   try {
     const { userId } = verifyToken(token);
+
+    // NEW: Check if user is banned
+    const [user] = await db
+      .select({ isBanned: users.isBanned })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (user?.isBanned) {
+      logger.warn(
+        {
+          event: "auth_middleware_user_banned",
+          userId,
+        },
+        "Banned user attempted access"
+      );
+      return res.status(403).json({
+        status: "error",
+        error: "Account has been suspended",
+      });
+    }
 
     req.user = { id: userId };
 
@@ -73,4 +93,5 @@ export function authMiddleware(
     });
   }
 }
+
     

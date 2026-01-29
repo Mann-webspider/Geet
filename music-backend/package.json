@@ -7,7 +7,8 @@
     "dev": "bun --watch src/main.ts",
     "start": "bun dist/main.js",
     "build": "bun build ./src/main.ts --target=bun --outdir=dist",
-    "seed": "bun run ./scripts/seed.ts"
+    "seed": "bun run ./scripts/seed.ts",
+    "worker": "bun src/workers/ingestion-worker.ts"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -28,6 +29,7 @@
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.8",
     "drizzle-orm": "^0.45.1",
+    "execa": "^9.6.1",
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",

@@ -23,6 +23,10 @@ export const users = pgTable(
     isPremium: boolean("is_premium").default(false),
     isVerified: boolean("is_verified").default(false),
     isAdmin: boolean("is_admin").default(false),
+    isBanned: boolean("is_banned").default(false), // NEW
+
+    lastActiveAt: timestamp("last_active_at"), // NEW
+
     createdAt: timestamp("created_at", { withTimezone: false })
       .defaultNow()
       .notNull(),
@@ -36,8 +40,10 @@ export const users = pgTable(
     usernameIdx: uniqueIndex("idx_users_username").on(table.username),
     verifiedIdx: index("idx_users_verified").on(table.isVerified),
     adminIdx: index("idx_users_admin").on(table.isAdmin),
+    bannedIdx: index("idx_users_banned").on(table.isBanned), // NEW
   })
 );
+
 
 
 export const playlists = pgTable(
@@ -175,6 +181,47 @@ export const listenHistory = pgTable(
   })
 );
 
+export const ingestionJobs = pgTable(
+  "ingestion_jobs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    sourceType: varchar("source_type", { length: 50 }).notNull(),
+    sourceInput: text("source_input").notNull(),
+
+    status: varchar("status", { length: 50 }).default("pending").notNull(),
+
+    extractedTitle: varchar("extracted_title", { length: 255 }),
+    extractedArtist: varchar("extracted_artist", { length: 255 }),
+    extractedDuration: integer("extracted_duration"),
+    extractedThumbnail: varchar("extracted_thumbnail", { length: 512 }),
+
+    trackId: uuid("track_id").references(() => tracks.id, { onDelete: "set null" }),
+
+    // NEW
+    errorCode: varchar("error_code", { length: 80 }),
+    errorMessage: text("error_message"),
+    debugLog: text("debug_log"),
+
+    retryCount: integer("retry_count").default(0).notNull(),
+
+    requestedByAdminId: uuid("requested_by_admin_id")
+      .notNull()
+      .references(() => users.id),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    completedAt: timestamp("completed_at"),
+  },
+  (table) => ({
+    statusIdx: index("idx_ingestion_jobs_status").on(table.status),
+    createdAtIdx: index("idx_ingestion_jobs_created_at").on(table.createdAt),
+    requestedByIdx: index("idx_ingestion_jobs_requested_by").on(table.requestedByAdminId),
+  })
+);
+
+export type IngestionJob = typeof ingestionJobs.$inferSelect;
+export type NewIngestionJob = typeof ingestionJobs.$inferInsert;
 export type ListenHistory = typeof listenHistory.$inferSelect;
 export type NewListenHistory = typeof listenHistory.$inferInsert;
 
