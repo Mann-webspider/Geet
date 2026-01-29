@@ -87,4 +87,103 @@ export const TrackController = {
       });
     }
   },
+
+  async edit(req: AuthenticatedRequest, res: Response) {
+    const startedAt = Date.now();
+    const userId = req.user?.id;
+    const trackId = req.params.id;
+
+    try {
+      const existing = await repo.getById(trackId);
+      if (!existing) {
+        return res.status(404).json({
+          status: "error",
+          error: "Track not found",
+        });
+      }
+
+      const body = req.body ?? {};
+      const update: any = {};
+
+      if (typeof body.title === "string") update.title = body.title;
+      if (typeof body.artist === "string") update.artist = body.artist;
+      if (typeof body.album !== "undefined") update.album = body.album;
+      if (typeof body.genre !== "undefined") update.genre = body.genre;
+
+      if (typeof body.duration !== "undefined") {
+        const durationNum =
+          typeof body.duration === "number"
+            ? body.duration
+            : Number(body.duration);
+        if (!Number.isNaN(durationNum)) {
+          update.duration = durationNum;
+        }
+      }
+
+      if (typeof body.isExplicit !== "undefined") {
+        if (typeof body.isExplicit === "boolean") {
+          update.isExplicit = body.isExplicit;
+        } else if (body.isExplicit === "true") {
+          update.isExplicit = true;
+        } else if (body.isExplicit === "false") {
+          update.isExplicit = false;
+        }
+      }
+
+      if (typeof body.coverArtUrl !== "undefined") {
+        update.coverArtUrl = body.coverArtUrl;
+      }
+
+      if (Object.keys(update).length === 0) {
+        return res.status(400).json({
+          status: "error",
+          error: "No valid fields to update",
+        });
+      }
+
+      const updated = await repo.updateTrack(trackId, update);
+
+      logger.info(
+        {
+          event: "track_edit_success",
+          userId,
+          trackId,
+          durationMs: Date.now() - startedAt,
+        },
+        "Track updated"
+      );
+
+      return res.json({ status: "success", data: updated });
+    } catch (err: any) {
+      logger.error(
+        {
+          event: "track_edit_error",
+          userId,
+          trackId,
+          error: err?.message,
+          stack: err?.stack,
+          durationMs: Date.now() - startedAt,
+        },
+        "Failed to edit track"
+      );
+
+      return res.status(500).json({
+        status: "error",
+        error: "Internal server error",
+      });
+    }
+  },
+
+  async getById(req: AuthenticatedRequest, res: Response) {
+    const trackId = req.params.id;
+    logger.info({ event: "track_get_by_id", trackId }, "Fetching track by ID");
+    const track = await repo.getById(trackId);
+    if (!track) {
+      return res.status(404).json({
+        status: "error",
+        error: "Track not found",
+      });
+    }
+    return res.json({ status: "success", data: track });
+  },
 };

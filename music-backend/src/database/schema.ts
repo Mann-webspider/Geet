@@ -219,6 +219,32 @@ export const ingestionJobs = pgTable(
     requestedByIdx: index("idx_ingestion_jobs_requested_by").on(table.requestedByAdminId),
   })
 );
+export const playbackEvents = pgTable(
+  "playback_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+
+    // optional context, keep flexible
+    source: varchar("source", { length: 30 }).default("unknown").notNull(),
+
+    startedAt: timestamp("started_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    userStartedIdx: index("idx_playback_events_user_started").on(t.userId, t.startedAt),
+    trackIdx: index("idx_playback_events_track").on(t.trackId),
+  })
+);
+
+export type PlaybackEvent = typeof playbackEvents.$inferSelect;
+export type NewPlaybackEvent = typeof playbackEvents.$inferInsert;
 
 export type IngestionJob = typeof ingestionJobs.$inferSelect;
 export type NewIngestionJob = typeof ingestionJobs.$inferInsert;

@@ -1,98 +1,132 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Music, Download, XCircle, Clock } from 'lucide-react';
-import { api } from '@/lib/api-client';
-import type { DashboardStats } from '@/types';
+"use client";
 
-// This would call your real API endpoints
-async function getDashboardStats(): Promise<DashboardStats> {
-  // TODO: Replace with real API calls when ready
-  // Example:
-  // const stats = await fetch('http://localhost:8080/v1/admin/stats', {
-  //   headers: { Authorization: `Bearer ${token}` }
-  // });
-  
-  // For now, return placeholder data
-  return {
-    totalTracks: 0,
-    totalJobs: 0,
-    failedJobs: 0,
-    pendingJobs: 0,
-  };
+import { useEffect, useState } from "react";
+import { adminApi } from "@/lib/admin-api";
+import { StatCard } from "@/components/admin/stat-card";
+import { RecentJobs } from "@/components/admin/recent-jobs";
+import { RecentTracks } from "@/components/admin/recent-tracks";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Users,
+  Shield,
+  UserX,
+  Crown,
+  Music2,
+  ListMusic,
+  Headphones,
+} from "lucide-react";
+
+import type { Track, IngestionJobListItem } from "@/types";
+
+type StatsPayload = any; // we normalize below
+
+function unwrap<T>(payload: any): T {
+  // supports either {status:"success", data: ...} or direct object
+  return (payload?.data ?? payload) as T;
 }
 
-export default async function DashboardPage() {
-  const stats = await getDashboardStats();
+export default function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any | null>(null);
+  const [recentJobs, setRecentJobs] = useState<IngestionJobListItem[]>([]);
+  const [recentTracks, setRecentTracks] = useState<Track[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const cards = [
-    {
-      title: 'Total Tracks',
-      value: stats.totalTracks,
-      icon: Music,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      title: 'Total Jobs',
-      value: stats.totalJobs,
-      icon: Download,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      title: 'Failed Jobs',
-      value: stats.failedJobs,
-      icon: XCircle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-    },
-    {
-      title: 'Pending Jobs',
-      value: stats.pendingJobs,
-      icon: Clock,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50',
-    },
-  ];
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [statsRes, jobsRes, tracksRes] = await Promise.all([
+        adminApi.dashboardStats(),
+        adminApi.recentJobs(5),
+        adminApi.recentTracks(5),
+      ]);
+
+      const s = unwrap<any>(statsRes);
+      const j = unwrap<{ data: IngestionJobListItem[] } | IngestionJobListItem[]>(jobsRes);
+      const t = unwrap<{ data: Track[] } | Track[]>(tracksRes);
+
+      setStats(s);
+
+      // support either {data:[...]} or [...]
+      setRecentJobs(Array.isArray(j) ? j : j.data ?? []);
+      setRecentTracks(Array.isArray(t) ? t : t.data ?? []);
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const users = stats?.users;
+  const tracks = stats?.tracks;
+  const playlists = stats?.playlists;
+  const listens = stats?.listens;
 
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-slate-900">Dashboard</h2>
-        <p className="text-slate-600">Overview of your music streaming platform</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Overview of platform health and activity.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <Card key={card.title}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">
-                  {card.title}
-                </CardTitle>
-                <div className={`p-2 rounded-lg ${card.bgColor}`}>
-                  <Icon className={`w-5 h-5 ${card.color}`} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{card.value}</div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      {error ? (
+        <div className="rounded-lg border bg-white p-4 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
+
+      {/* Stats grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {loading ? (
+          <>
+            <Skeleton className="h-[86px] rounded-lg" />
+            <Skeleton className="h-[86px] rounded-lg" />
+            <Skeleton className="h-[86px] rounded-lg" />
+            <Skeleton className="h-[86px] rounded-lg" />
+            <Skeleton className="h-[86px] rounded-lg" />
+            <Skeleton className="h-[86px] rounded-lg" />
+            <Skeleton className="h-[86px] rounded-lg" />
+            <Skeleton className="h-[86px] rounded-lg" />
+          </>
+        ) : (
+          <>
+            <StatCard title="Total users" value={users?.totalUsers ?? 0} icon={<Users className="h-4 w-4" />} />
+            <StatCard title="Admins" value={users?.totalAdmins ?? 0} icon={<Shield className="h-4 w-4" />} />
+            <StatCard title="Banned" value={users?.totalBanned ?? 0} icon={<UserX className="h-4 w-4" />} />
+            <StatCard title="Premium" value={users?.totalPremium ?? 0} icon={<Crown className="h-4 w-4" />} />
+
+            <StatCard title="Tracks" value={tracks?.totalTracks ?? 0} icon={<Music2 className="h-4 w-4" />} />
+            <StatCard title="Playlists" value={playlists?.totalPlaylists ?? 0} icon={<ListMusic className="h-4 w-4" />} />
+            <StatCard title="Listens" value={listens?.totalListens ?? 0} icon={<Headphones className="h-4 w-4" />} />
+            <StatCard title="Total duration" value={`${Math.floor((tracks?.totalDuration ?? 0) / 60)} min`} />
+          </>
+        )}
       </div>
 
-      <div className="mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-slate-600">
-              Navigate using the sidebar to manage tracks and ingestion jobs.
-            </p>
-          </CardContent>
-        </Card>
+      {/* Recent widgets */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {loading ? (
+          <>
+            <div className="rounded-lg border bg-white p-5">
+              <Skeleton className="h-5 w-56" />
+              <Skeleton className="mt-4 h-24 w-full" />
+            </div>
+            <div className="rounded-lg border bg-white p-5">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="mt-4 h-24 w-full" />
+            </div>
+          </>
+        ) : (
+          <>
+            <RecentJobs jobs={recentJobs} />
+            <RecentTracks tracks={recentTracks} />
+          </>
+        )}
       </div>
     </div>
   );

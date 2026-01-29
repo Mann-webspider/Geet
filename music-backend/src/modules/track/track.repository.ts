@@ -1,6 +1,6 @@
 import { db } from "../../config/db";
 import { tracks } from "../../database/schema";
-import { ilike, or, desc } from "drizzle-orm";
+import { ilike, or, desc, eq } from "drizzle-orm";
 
 export class TrackRepository {
   async findAll(limit = 50) {
@@ -36,5 +36,36 @@ export class TrackRepository {
       .limit(1);
     
     return track ?? null;
+  }
+    async getById(id: string) {
+    const [row] = await db
+      .select()
+      .from(tracks)
+      .where(eq(tracks.id, id))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async updateTrack(
+    id: string,
+    data: Partial<{
+      title: string;
+      artist: string;
+      album: string | null;
+      genre: string | null;
+      duration: number | null;
+      isExplicit: boolean;
+      coverArtUrl: string | null;
+    }>
+  ) {
+    const [updated] = await db
+      .update(tracks)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(eq(tracks.id, id))
+      .returning();
+    return updated ?? null;
   }
 }

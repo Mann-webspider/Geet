@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { verifyAdminSession } from "@/lib/auth";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { AdminHeader } from "@/components/admin/header";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,6 +13,8 @@ export default async function ProtectedAdminLayout({
   children: React.ReactNode;
 }) {
   const user = await verifyAdminSession();
+  console.log("protected layout ",user);
+  
   if (!user) redirect("/admin/login");
 
   return (
@@ -23,6 +26,7 @@ export default async function ProtectedAdminLayout({
           <main className="p-6">{children}</main>
         </div>
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

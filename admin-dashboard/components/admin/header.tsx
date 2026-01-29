@@ -5,7 +5,7 @@ import { LogOut } from "lucide-react";
 
 export function AdminHeader({ email }: { email: string }) {
   async function logout() {
-    document.cookie = "admin_token_public=; Path=/; Max-Age=0; SameSite=Lax";
+    document.cookie = "admin_token=; Path=/; Max-Age=0; SameSite=Lax";
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/admin/login";
   }

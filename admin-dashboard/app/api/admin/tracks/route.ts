@@ -5,6 +5,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export async function GET(req: NextRequest) {
   const token = (await cookies()).get("admin_token")?.value;
+  console.log("route tracks",token);
+  
   if (!token) return new Response(null, { status: 401 });
 
   const { searchParams } = new URL(req.url);

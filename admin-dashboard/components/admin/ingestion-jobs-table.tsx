@@ -5,9 +5,11 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-function shortId(id: string) {
+function shortId(id?: string) {
+  if (!id) return "";
   return id.slice(0, 8);
 }
+
 
 function statusBadge(status: IngestionJobStatus) {
   switch (status) {
@@ -47,30 +49,30 @@ export function IngestionJobsTable({
           </thead>
           <tbody>
             {jobs.map((j) => (
-              <tr key={j.id} className="border-t">
-                <td className="px-4 py-3 font-medium">{shortId(j.id)}</td>
-                <td className="px-4 py-3">{j.sourceType}</td>
-                <td className="px-4 py-3 max-w-[360px] truncate" title={j.sourceInput}>
-                  {j.sourceInput}
+              <tr key={j.job.id} className="border-t">
+                <td className="px-4 py-3 font-medium">{shortId(j.job.id)}</td>
+                <td className="px-4 py-3">{j.job.sourceType}</td>
+                <td className="px-4 py-3 max-w-[360px] truncate" title={j.job.sourceInput}>
+                  {j.job.sourceInput}
                 </td>
-                <td className="px-4 py-3">{statusBadge(j.status)}</td>
-                <td className="px-4 py-3 tabular-nums">{j.retryCount}</td>
-                <td className="px-4 py-3">{j.errorCode ?? "-"}</td>
-                <td className="px-4 py-3">{j.requestedBy?.email ?? "-"}</td>
-                <td className="px-4 py-3">{new Date(j.createdAt).toLocaleString()}</td>
+                <td className="px-4 py-3">{statusBadge(j.job.status)}</td>
+                <td className="px-4 py-3 tabular-nums">{j.job.retryCount}</td>
+                <td className="px-4 py-3">{j.job.errorCode ?? "-"}</td>
+                <td className="px-4 py-3">{j.job.requestedBy?.email ?? "-"}</td>
+                <td className="px-4 py-3">{new Date(j.job.createdAt).toLocaleString()}</td>
                 <td className="px-4 py-3 text-right space-x-2">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/admin/ingestion-jobs/${j.id}`}>View</Link>
+                    <Link href={`/admin/ingestion-jobs/${j.job.id}`}>View</Link>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={j.status !== "failed"}
-                    onClick={() => onRetry(j.id)}
+                    disabled={j.job.status !== "failed"}
+                    onClick={() => onRetry(j.job.id)}
                   >
                     Retry
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={() => onDelete(j.id)}>
+                  <Button variant="destructive" size="sm" onClick={() => onDelete(j.job.id)}>
                     Delete
                   </Button>
                 </td>

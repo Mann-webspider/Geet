@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { notify } from "@/lib/notify";
+import { getErrorMessage } from "@/lib/http-error";
 
 export function TrackUploadDialog({ onUploaded }: { onUploaded: () => void }) {
   const [open, setOpen] = useState(false);
@@ -22,15 +24,14 @@ export function TrackUploadDialog({ onUploaded }: { onUploaded: () => void }) {
     try {
       const form = new FormData(e.currentTarget);
       form.set("isExplicit", String(isExplicit));
-
-      await adminApi.uploadTrack(form);
-      onUploaded();
-      setOpen(false);
-      e.currentTarget.reset();
-      setIsExplicit(false);
-    } catch (err: any) {
-      setError(err.message || "Upload failed");
-    } finally {
+  await adminApi.uploadTrack(form);
+  notify.success("Upload complete", "Track was created successfully.");
+  onUploaded();
+  setOpen(false);
+} catch (e) {
+  notify.error("Upload failed", getErrorMessage(e));
+}
+ finally {
       setLoading(false);
     }
   }

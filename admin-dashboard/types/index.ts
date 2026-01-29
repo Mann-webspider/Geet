@@ -1,3 +1,4 @@
+import { useParams } from 'next/navigation';
 export interface User {
   id: string;
   email: string;
@@ -13,6 +14,7 @@ export interface LoginResponse {
     username: string;
     token: string;
     isAdmin: boolean;
+    isPremium: boolean;
   };
 }
 
@@ -36,10 +38,8 @@ export interface IngestionJob {
   completedAt?: string;
 }
 export type PaginatedResponse<T> = {
+  status: string;
   data: T[];
-  total: number;
-  limit: number;
-  offset: number;
 };
 
 export type Track = {
@@ -49,9 +49,13 @@ export type Track = {
   album: string | null;
   duration: number;
   genre: string | null;
+  fileUrl: string;
+  coverArtUrl: string | null;
+  releaseYear: number | null;
   isExplicit: boolean;
   playCount: number;
   createdAt: string;
+  updatedAt: string;
 };
 
 export type IngestionJobStatus =
@@ -62,15 +66,9 @@ export type IngestionJobStatus =
   | "failed";
 
 export type IngestionJobListItem = {
-  id: string;
-  sourceType: "youtube" | "torrent" | "manual";
-  sourceInput: string;
-  status: IngestionJobStatus;
-  retryCount: number;
-  errorCode: string | null;
-  requestedBy?: { id: string; email: string; username: string } | null;
-  createdAt: string;
-  track?: { id: string; title: string; artist: string } | null;
+  admin: any;
+  job: IngestionJobDetails;
+  track: any
 };
 
 export type IngestionJobDetails = {
@@ -111,4 +109,22 @@ export type AdminUserListItem = {
   isVerified: boolean;
   lastActiveAt: string | null;
   createdAt: string;
+};
+export type AdminUserDetailsResponse = {
+  user: AdminUserListItem;
+  stats: {
+    playlistCount: number;
+    listenCount: number;
+  };
+  listenHistory: Array<{
+    id: string;
+    playedAt: string;
+    track: { id: string; title: string; artist: string; duration: number };
+  }>;
+  playlists: Array<{
+    id: string;
+    name: string;
+    trackCount: number;
+    createdAt: string;
+  }>;
 };

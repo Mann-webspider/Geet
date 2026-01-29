@@ -1,5 +1,6 @@
 "use client";
 
+import { adminAxios } from "./axios.admin";
 import type {
   Track,
   IngestionJobListItem,
@@ -9,113 +10,123 @@ import type {
   PaginatedResponse,
 } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
-function getToken(): string | null {
-  if (typeof document === "undefined") return null;
-  const m = document.cookie.match(/(?:^|;\s*)admin_token_public=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : null;
-}
-
-function clearAuthAndRedirect() {
-  // clear public token cookie
-  document.cookie =
-    "admin_token_public=; Path=/; Max-Age=0; SameSite=Lax";
-  // also clear server cookie
-  fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-  window.location.href = "/admin/login";
-}
-
-async function request<T>(
-  path: string,
-  init: RequestInit = {}
-): Promise<T> {
-  const token = getToken();
-  const headers = new Headers(init.headers || {});
-  headers.set("Accept", "application/json");
-
-  if (!(init.body instanceof FormData)) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers,
-  });
-
-  if (res.status === 401 || res.status === 403) {
-    clearAuthAndRedirect();
-    throw new Error("Unauthorized");
-  }
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `Request failed (${res.status})`);
-  }
-
-  const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    return (await res.json()) as T;
-  }
-  return (null as unknown) as T;
-}
-
 export const adminApi = {
   // Tracks
-  listTracks: (params: { limit: number; offset: number; search?: string }) => {
+  async listTracks(params: { limit: number; offset: number; search?: string }) {
     const q = new URLSearchParams({
       limit: String(params.limit),
       offset: String(params.offset),
     });
     if (params.search) q.set("search", params.search);
-    return request<PaginatedResponse<Track>>(`/v1/admin/tracks?${q.toString()}`);
+    const res = await adminAxios.get<PaginatedResponse<Track>>(
+      `/v1/admin/tracks?${q.toString()}`
+    );
+    return res.data;
   },
 
-  uploadTrack: (formData: FormData) =>
-    request<Track>("/v1/admin/tracks", { method: "POST", body: formData }),
+  async uploadTrack(formData: FormData) {
+    const res = await adminAxios.post<Track>("/v1/admin/tracks", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
 
-  deleteTrack: (id: string) =>
-    request<{ ok: boolean }>(`/v1/admin/tracks/${id}`, { method: "DELETE" }),
+  async deleteTrack(id: string) {
+    const res = await adminAxios.delete(`/v1/admin/tracks/${id}`);
+    return res.data;
+  },
 
   // Ingestion jobs
-  listJobs: (params: { limit: number; offset: number; status?: string }) => {
+  async listJobs(params: { limit: number; offset: number; status?: string }) {
     const q = new URLSearchParams({
       limit: String(params.limit),
       offset: String(params.offset),
     });
     if (params.status && params.status !== "all") q.set("status", params.status);
-    return request<PaginatedResponse<IngestionJobListItem>>(
+    const res = await adminAxios.get<PaginatedResponse<IngestionJobListItem>>(
       `/v1/admin/ingestion-jobs?${q.toString()}`
     );
+    return res.data;
   },
 
-  createJob: (body: { sourceType: "youtube" | "torrent" | "manual"; sourceInput: string }) =>
-    request<{ id: string }>(`/v1/admin/ingestion-jobs`, {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
+ createJob: async (body: { sourceType: "youtube" | "torrent" | "manual"; sourceInput: string }) => {
+  const res = await adminAxios.post(`/v1/admin/ingestion-jobs`, body);
+  return res.data.data as { id: string };
+},
 
-  jobDetails: (id: string) =>
-    request<IngestionJobDetails>(`/v1/admin/ingestion-jobs/${id}`),
 
-  retryJob: (id: string) =>
-    request<{ ok: boolean }>(`/v1/admin/ingestion-jobs/${id}/retry`, { method: "POST" }),
+  async jobDetails(id: string) {
+    const res = await adminAxios.get<IngestionJobDetails>(`/v1/admin/ingestion-jobs/${id}`);
+    return res.data;
+  },
 
-  deleteJob: (id: string) =>
-    request<{ ok: boolean }>(`/v1/admin/ingestion-jobs/${id}`, { method: "DELETE" }),
+  async retryJob(id: string) {
+    const res = await adminAxios.post(`/v1/admin/ingestion-jobs/${id}/retry`);
+    return res.data;
+  },
 
-  // Dashboard / users (later)
-  dashboardStats: () => request<DashboardStats>(`/v1/admin/dashboard/stats`),
+  async deleteJob(id: string) {
+    const res = await adminAxios.delete(`/v1/admin/ingestion-jobs/${id}`);
+    return res.data;
+  },
 
-  listUsers: (params: { limit: number; offset: number; search?: string; banned?: "true" | "false" }) => {
+
+
+  async listUsers(params: {
+    limit: number;
+    offset: number;
+    search?: string;
+    banned?: "true" | "false";
+  }) {
     const q = new URLSearchParams({
       limit: String(params.limit),
       offset: String(params.offset),
     });
     if (params.search) q.set("search", params.search);
     if (params.banned) q.set("banned", params.banned);
-    return request<PaginatedResponse<AdminUserListItem>>(`/v1/admin/users?${q.toString()}`);
+    const res = await adminAxios.get<PaginatedResponse<AdminUserListItem>>(
+      `/v1/admin/users?${q.toString()}`
+    );
+    return res.data;
   },
+
+  dashboardStats: async () => {
+  const res = await adminAxios.get(`/v1/admin/dashboard/stats`);
+  return res.data; // backend returns {status:"success", data:{...}} or direct
+},
+
+recentJobs: async (limit = 5) => {
+  const res = await adminAxios.get(`/v1/admin/ingestion-jobs?limit=${limit}&offset=0`);
+  return res.data;
+},
+
+recentTracks: async (limit = 5) => {
+  const res = await adminAxios.get(`/v1/admin/tracks?limit=${limit}&offset=0`);
+  return res.data;
+},
+banUser: async (id: string) => {
+  const res = await adminAxios.post(`/v1/admin/users/${id}/ban`);
+  return res.data;
+},
+
+unbanUser: async (id: string) => {
+  const res = await adminAxios.post(`/v1/admin/users/${id}/unban`);
+  return res.data;
+},
+userDetails: async (id: string) => {
+  const res = await adminAxios.get(`/v1/admin/users/${id}`);
+  return res.data;
+},
+// Single track
+getTrack: async (id: string) => {
+  const res = await adminAxios.get(`/v1/tracks/${id}`); // public/admin both OK since protected by JWT
+  return res.data;
+},
+
+// Update track
+updateTrack: async (id: string, body: Partial<Track>) => {
+  const res = await adminAxios.patch(`/v1/tracks/${id}`, body);
+  return res.data;
+},
+
 };

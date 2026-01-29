@@ -24,50 +24,53 @@ export function LoginForm() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
       // 1) Call backend login
-      const res = await fetch(`${apiUrl}/v1/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+     const res = await fetch("/api/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email, password }),
+});
 
-      if (!res.ok) {
-        setError("Invalid credentials");
-        return;
-      }
+if (!res.ok) {
+  const err = await res.json().catch(() => ({}));
+  setError(err.error ?? "Login failed");
+  return;
+}
+const data = await res.json()
+console.log("login-form",data.user.token);
 
-      const json = (await res.json()) as LoginResponse;
-      if (json.status !== "success") {
-        setError("Login failed");
-        return;
-      }
+localStorage.setItem("admin_token",data.user.token );
+// cookie is already set now
+window.location.href = "/admin/dashboard";
 
-      const { token, isAdmin } = json.data;
-      if (!isAdmin) {
-        setError("User is not admin");
-        return;
-      }
 
-      // 2) Set HttpOnly cookie via Next route
-      const cookieRes = await fetch("/api/auth/set-cookie", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
 
-      if (!cookieRes.ok) {
-        setError("Failed to store session");
-        return;
-      }
+      // const { token, isAdmin } = json.data;
+      // if (!isAdmin) {
+      //   setError("User is not admin");
+      //   return;
+      // }
 
-      // 3) Optional: sanity check session
-      const sessionRes = await fetch("/api/auth/session");
-      if (!sessionRes.ok) {
-        setError("Session not recognized (check cookie host/path)");
-        return;
-      }
+      // // 2) Set HttpOnly cookie via Next route
+      // const cookieRes = await fetch("/api/auth/set-cookie", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ token }),
+      // });
 
-      // 4) Navigate to dashboard (hard reload avoids stale server cache)
-      window.location.href = "/admin/dashboard";
+      // if (!cookieRes.ok) {
+      //   setError("Failed to store session");
+      //   return;
+      // }
+
+      // // 3) Optional: sanity check session
+      // const sessionRes = await fetch("/api/auth/session");
+      // if (!sessionRes.ok) {
+      //   setError("Session not recognized (check cookie host/path)");
+      //   return;
+      // }
+
+      // // 4) Navigate to dashboard (hard reload avoids stale server cache)
+      // window.location.href = "/admin/dashboard";
     } catch (e: any) {
       setError(e.message ?? "Login error");
     } finally {

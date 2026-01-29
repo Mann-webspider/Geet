@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from '@/lib/auth-store';
+import { Toaster } from "@/components/ui/sonner";
+import "react-h5-audio-player/lib/styles.css";
 
 
 const geistSans = Geist({
@@ -31,7 +33,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>{children}
+          <Toaster richColors closeButton />
+        </AuthProvider>
       </body>
     </html>
   );

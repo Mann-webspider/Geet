@@ -21,6 +21,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function fetchSession() {
       try {
         const res = await fetch('/api/auth/session');
+        console.log("auth-store ",res);
+        
         if (!res.ok) {
           if (!cancelled) setUser(null);
           return;
