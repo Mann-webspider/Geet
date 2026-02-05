@@ -12,6 +12,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@expo-google-fonts/league-gothic": "^0.4.2",
     "@expo-google-fonts/league-spartan": "^0.4.2",
     "@expo/vector-icons": "^15.0.3",
     "@gluestack-style/react": "^1.0.57",

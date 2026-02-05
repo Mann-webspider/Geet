@@ -9,25 +9,43 @@ import { PlaylistRow } from "../../src/components/home/PlaylistRow";
 import { TrackList } from "../../src/components/home/TrackList";
 import { HomeDock } from "../../src/components/home/HomeDock";
 import { router } from "expo-router";
+import { CreatorHeroCarousel } from "@/src/components/home/CreatorHeroCarousel";
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
+  const creators: CreatorHero[] = [
+  {
+    id: "1",
+    title: "Hindi Hits",
+    subtitle: "Arjit Singh, Neha Kakkar",
+    image: require("../../assets/creators/creator1.jpg"),
+  },
+  {
+    id: "2",
+    title: "Midnight Lo‑fi",
+    subtitle: "Late night beats to focus",
+    image: require("../../assets/creators/creator2.jpg"),
+  },
+];
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-light">
+    <SafeAreaView className="flex-1 bg-surface-light dark:bg-background-dark">
       <View className="flex-1">
         {/* gradient-like header */}
         <View className="rounded-b-3xl bg-gradient-to-br from-purple-700 via-black to-black px-5 pb-4 pt-3">
           {/* top row: avatar + icons (simplified) */}
           <View className="mb-5 flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">
+              <View>
+                <Text style={{ fontFamily: "LeagueGothic_400Regular" }} className="text-4xl text-black dark:text-white ">Good {new Date().getHours() < 12 ? "morning" : "Afternoon"}</Text>
+              </View>
+              
+            </View>
               <View className="h-9 w-9 items-center justify-center rounded-full bg-primary">
                 <Text className="text-base font-semibold text-black">
                   {user?.username?.[0]?.toUpperCase() ?? "G"}
                 </Text>
               </View>
-              
-            </View>
            
           </View>
 
@@ -41,9 +59,15 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 80 }}
         >
-          <HomeSection title="Curated & trending">
+          {/* <HomeSection title="Curated & trending">
             <HeroCard onPressPlaylist={() => router.push("/(app)/library")} />
-          </HomeSection>
+          </HomeSection> */}
+          <HomeSection title="Curated & trending">
+  <CreatorHeroCarousel
+    items={creators}
+    onPressItem={() => router.push("/(app)/library")}
+  />
+</HomeSection>;
 
           <HomeSection
             title="Top daily playlists"

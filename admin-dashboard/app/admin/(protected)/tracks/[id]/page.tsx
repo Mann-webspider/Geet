@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { TrackPlayerWide } from "@/components/admin/track-player-wide";
+import { ArtistPickerDialog } from "@/components/admin/ArtistPickerDialog";
+import { toast } from "sonner";
 
 
 
@@ -24,7 +26,8 @@ export default function TrackDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
-
+  
+  const [assigningTrackId, setAssigningTrackId] = useState<string | null>(null);
   const [track, setTrack] = useState<Track | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +90,31 @@ export default function TrackDetailPage() {
           <Button onClick={() => router.push(`/admin/tracks/${track.id}/edit`)}>
             Edit Track
           </Button>
+           <Button
+  variant="outline"
+  size="sm"
+  onClick={() => setAssigningTrackId(track.id)}
+>
+  Assign artist
+</Button>
+{track.artistId ? (
+  <Button
+    variant="ghost"
+    size="sm"
+    className="text-red-600"
+    onClick={async () => {
+      try {
+        await adminApi.deassignTrackArtist(track.id);
+        toast.success("Artist removed from track");
+        load(); // refresh list
+      } catch (e: any) {
+        toast.error(e?.message || "Failed to remove artist");
+      }
+    }}
+  >
+    Remove artist
+  </Button>
+) : null}
         </div>
       </div>
 
@@ -184,6 +212,12 @@ export default function TrackDetailPage() {
           </CardContent>
         </Card>
       </div>
+      <ArtistPickerDialog
+  open={!!assigningTrackId}
+  trackId={assigningTrackId}
+  onClose={() => setAssigningTrackId(null)}
+  onAssigned={load} // your existing function to refresh track list
+/>
     </div>
   );
 }

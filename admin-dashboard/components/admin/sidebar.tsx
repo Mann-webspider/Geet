@@ -10,7 +10,9 @@ const nav = [
   { label: "Tracks", href: "/admin/tracks", icon: Music2 },
   { label: "Ingestion Jobs", href: "/admin/ingestion-jobs", icon: Cpu },
   { label: "Users", href: "/admin/users", icon: Users },
-  { label: "User Request", href: "/admin/music-request", icon: Cpu }
+  { label: "User Request", href: "/admin/music-request", icon: Cpu },
+  { label: "Artist PLaylist", href: "/admin/artists", icon: Cpu },
+  { label: "Global PLaylist", href: "/admin/global-playlists", icon: Cpu }
 ];
 
 export function AdminSidebar() {

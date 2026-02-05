@@ -61,7 +61,7 @@ export default function EditorialPlaylistsPage() {
   async function handleRefreshTrending() {
     try {
       const res = await refreshTrendingPlaylist({ windowHours, limit });
-      toast.success(`Trending playlist updated with ${res.trackCount} tracks`);
+      toast.success("Trending playlist updated.");
       setRefreshOpen(false);
       const data = await getEditorialPlaylists();
       setPlaylists(data);

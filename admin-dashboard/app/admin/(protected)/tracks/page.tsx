@@ -8,6 +8,7 @@ import { TrackUploadDialog } from "@/components/admin/track-upload-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useUrlState } from "@/lib/url-state";
+import { ArtistPickerDialog } from "@/components/admin/ArtistPickerDialog";
 
 export default function TracksPage() {
   const { searchParams, setParams } = useUrlState();
@@ -22,6 +23,7 @@ export default function TracksPage() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+
 
   async function load() {
     setLoading(true);
@@ -88,6 +90,8 @@ export default function TracksPage() {
           >
             Next
           </Button>
+         
+
         </div>
       </div>
 
@@ -96,6 +100,8 @@ export default function TracksPage() {
       ) : (
         <TrackTable tracks={tracks} onDelete={async (id) => { await adminApi.deleteTrack(id); await load(); }} />
       )}
+      
+
     </div>
   );
 }

@@ -4,6 +4,9 @@ import { AdminTrackRepository } from "./admin-track.repository";
 import { getStorageClient } from "../../services/storage";
 import { logger } from "../../config/logger";
 import multer from "multer";
+import { db } from "../../config/db";
+import { artists, tracks } from "../../database/schema";
+import { eq } from "drizzle-orm";
 
 const repo = new AdminTrackRepository();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -32,7 +35,7 @@ export const AdminTrackController = {
           filename: file.originalname,
           size: file.size,
         },
-        "Admin uploading track"
+        "Admin uploading track",
       );
 
       const storage = getStorageClient();
@@ -64,7 +67,7 @@ export const AdminTrackController = {
           trackId: track.id,
           durationMs: Date.now() - startedAt,
         },
-        "Track uploaded successfully"
+        "Track uploaded successfully",
       );
 
       return res.status(201).json({
@@ -80,7 +83,7 @@ export const AdminTrackController = {
           stack: err?.stack,
           durationMs: Date.now() - startedAt,
         },
-        "Failed to upload track"
+        "Failed to upload track",
       );
       return res.status(500).json({
         status: "error",
@@ -106,7 +109,7 @@ export const AdminTrackController = {
           count: tracks.length,
           durationMs: Date.now() - startedAt,
         },
-        "Admin fetched tracks"
+        "Admin fetched tracks",
       );
 
       return res.json({
@@ -120,7 +123,7 @@ export const AdminTrackController = {
           error: err?.message,
           durationMs: Date.now() - startedAt,
         },
-        "Failed to list tracks"
+        "Failed to list tracks",
       );
       return res.status(500).json({
         status: "error",
@@ -155,7 +158,7 @@ export const AdminTrackController = {
           trackId,
           durationMs: Date.now() - startedAt,
         },
-        "Track deleted"
+        "Track deleted",
       );
 
       return res.json({
@@ -171,12 +174,81 @@ export const AdminTrackController = {
           error: err?.message,
           durationMs: Date.now() - startedAt,
         },
-        "Failed to delete track"
+        "Failed to delete track",
       );
       return res.status(500).json({
         status: "error",
         error: "Internal server error",
       });
     }
+  },
+  // PATCH /v1/admin/tracks/:id/artist
+  // body: { artistId: string | null }
+
+  async setArtist(req: AuthenticatedRequest, res: Response) {
+    const trackId = req.params.id;
+    const { artistId } = req.body as { artistId: string | null };
+
+    // If artistId is null → deassign
+    if (artistId === null) {
+      const [updated] = await db
+        .update(tracks)
+        .set({
+          artistId: null,
+          // optional: keep the old artist text, or clear it:
+          // artist: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(tracks.id, trackId))
+        .returning();
+
+      if (!updated) {
+        return res
+          .status(404)
+          .json({ status: "error", error: "Track not found" });
+      }
+
+      return res.json({ status: "success", data: updated });
+    }
+
+    // Normal assign flow
+    if (!artistId) {
+      return res
+        .status(400)
+        .json({
+          status: "error",
+          error: "artistId is required (or null to deassign)",
+        });
+    }
+
+    const [artist] = await db
+      .select()
+      .from(artists)
+      .where(eq(artists.id, artistId))
+      .limit(1);
+
+    if (!artist) {
+      return res
+        .status(404)
+        .json({ status: "error", error: "Artist not found" });
+    }
+
+    const [updated] = await db
+      .update(tracks)
+      .set({
+        artistId,
+        artist: artist.name,
+        updatedAt: new Date(),
+      })
+      .where(eq(tracks.id, trackId))
+      .returning();
+
+    if (!updated) {
+      return res
+        .status(404)
+        .json({ status: "error", error: "Track not found" });
+    }
+
+    return res.json({ status: "success", data: updated });
   },
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import { Artist } from "@/types/artist";
 import { adminAxios } from "./axios.admin";
 import type {
   Track,
@@ -23,7 +24,7 @@ export const adminApi = {
     });
     if (params.search) q.set("search", params.search);
     const res = await adminAxios.get<PaginatedResponse<Track>>(
-      `/v1/admin/tracks?${q.toString()}`
+      `/v1/admin/tracks?${q.toString()}`,
     );
     return res.data;
   },
@@ -39,6 +40,30 @@ export const adminApi = {
     const res = await adminAxios.delete(`/v1/admin/tracks/${id}`);
     return res.data;
   },
+  // list artists for picker (searchable)
+  listArtistsLite: async (params: { search?: string; limit?: number }) => {
+    const qs = new URLSearchParams();
+    if (params.search) qs.set("search", params.search);
+    if (params.limit != null) qs.set("limit", String(params.limit));
+
+    const res = await adminAxios.get<Artist[]>(`/v1/artists?${qs.toString()}`);
+    return res.data;
+  },
+
+  // assign artist to track
+  assignTrackArtist: async (trackId: string, artistId: string) => {
+    const res = await adminAxios.patch(`/v1/admin/tracks/${trackId}/artist`, {
+      artistId,
+    });
+    return res.data; // or res.data.data depending on your backend wrapper
+  },
+  
+  deassignTrackArtist: async (trackId: string) => {
+    const res = await adminAxios.patch(`/v1/admin/tracks/${trackId}/artist`, {
+      artistId: null,
+    });
+    return res.data;
+  },
 
   // Ingestion jobs
   async listJobs(params: { limit: number; offset: number; status?: string }) {
@@ -46,21 +71,26 @@ export const adminApi = {
       limit: String(params.limit),
       offset: String(params.offset),
     });
-    if (params.status && params.status !== "all") q.set("status", params.status);
+    if (params.status && params.status !== "all")
+      q.set("status", params.status);
     const res = await adminAxios.get<PaginatedResponse<IngestionJobListItem>>(
-      `/v1/admin/ingestion-jobs?${q.toString()}`
+      `/v1/admin/ingestion-jobs?${q.toString()}`,
     );
     return res.data;
   },
 
- createJob: async (body: { sourceType: "youtube" | "torrent" | "manual"; sourceInput: string }) => {
-  const res = await adminAxios.post(`/v1/admin/ingestion-jobs`, body);
-  return res.data.data as { id: string };
-},
-
+  createJob: async (body: {
+    sourceType: "youtube" | "torrent" | "manual";
+    sourceInput: string;
+  }) => {
+    const res = await adminAxios.post(`/v1/admin/ingestion-jobs`, body);
+    return res.data.data as { id: string };
+  },
 
   async jobDetails(id: string) {
-    const res = await adminAxios.get<IngestionJobDetails>(`/v1/admin/ingestion-jobs/${id}`);
+    const res = await adminAxios.get<IngestionJobDetails>(
+      `/v1/admin/ingestion-jobs/${id}`,
+    );
     return res.data;
   },
 
@@ -73,8 +103,6 @@ export const adminApi = {
     const res = await adminAxios.delete(`/v1/admin/ingestion-jobs/${id}`);
     return res.data;
   },
-
-
 
   async listUsers(params: {
     limit: number;
@@ -89,73 +117,78 @@ export const adminApi = {
     if (params.search) q.set("search", params.search);
     if (params.banned) q.set("banned", params.banned);
     const res = await adminAxios.get<PaginatedResponse<AdminUserListItem>>(
-      `/v1/admin/users?${q.toString()}`
+      `/v1/admin/users?${q.toString()}`,
     );
     return res.data;
   },
 
   dashboardStats: async () => {
-  const res = await adminAxios.get(`/v1/admin/dashboard/stats`);
-  return res.data; // backend returns {status:"success", data:{...}} or direct
-},
+    const res = await adminAxios.get(`/v1/admin/dashboard/stats`);
+    return res.data; // backend returns {status:"success", data:{...}} or direct
+  },
 
-recentJobs: async (limit = 5) => {
-  const res = await adminAxios.get(`/v1/admin/ingestion-jobs?limit=${limit}&offset=0`);
-  return res.data;
-},
+  recentJobs: async (limit = 5) => {
+    const res = await adminAxios.get(
+      `/v1/admin/ingestion-jobs?limit=${limit}&offset=0`,
+    );
+    return res.data;
+  },
 
-recentTracks: async (limit = 5) => {
-  const res = await adminAxios.get(`/v1/admin/tracks?limit=${limit}&offset=0`);
-  return res.data;
-},
-banUser: async (id: string) => {
-  const res = await adminAxios.post(`/v1/admin/users/${id}/ban`);
-  return res.data;
-},
+  recentTracks: async (limit = 5) => {
+    const res = await adminAxios.get(
+      `/v1/admin/tracks?limit=${limit}&offset=0`,
+    );
+    return res.data;
+  },
+  banUser: async (id: string) => {
+    const res = await adminAxios.post(`/v1/admin/users/${id}/ban`);
+    return res.data;
+  },
 
-unbanUser: async (id: string) => {
-  const res = await adminAxios.post(`/v1/admin/users/${id}/unban`);
-  return res.data;
-},
-userDetails: async (id: string) => {
-  const res = await adminAxios.get(`/v1/admin/users/${id}`);
-  return res.data;
-},
-// Single track
-getTrack: async (id: string) => {
-  const res = await adminAxios.get(`/v1/tracks/${id}`); // public/admin both OK since protected by JWT
-  return res.data;
-},
+  unbanUser: async (id: string) => {
+    const res = await adminAxios.post(`/v1/admin/users/${id}/unban`);
+    return res.data;
+  },
+  userDetails: async (id: string) => {
+    const res = await adminAxios.get(`/v1/admin/users/${id}`);
+    return res.data;
+  },
+  // Single track
+  getTrack: async (id: string) => {
+    const res = await adminAxios.get(`/v1/tracks/${id}`); // public/admin both OK since protected by JWT
+    return res.data;
+  },
 
-// Update track
-updateTrack: async (id: string, body: Partial<Track>) => {
-  const res = await adminAxios.patch(`/v1/tracks/${id}`, body);
-  return res.data;
-},
-adminListMusicRequests: async (params: {
-  status?: MusicRequestStatus;
-  limit?: number;
-  offset?: number;
-}) => {
-  const qs = new URLSearchParams();
-  if (params.status) qs.set("status", params.status);
-  if (typeof params.limit === "number") qs.set("limit", String(params.limit));
-  if (typeof params.offset === "number") qs.set("offset", String(params.offset));
+  // Update track
+  updateTrack: async (id: string, body: Partial<Track>) => {
+    const res = await adminAxios.patch(`/v1/tracks/${id}`, body);
+    return res.data;
+  },
+  adminListMusicRequests: async (params: {
+    status?: MusicRequestStatus;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const qs = new URLSearchParams();
+    if (params.status) qs.set("status", params.status);
+    if (typeof params.limit === "number") qs.set("limit", String(params.limit));
+    if (typeof params.offset === "number")
+      qs.set("offset", String(params.offset));
 
-  const url = `/v1/admin/music-requests${qs.toString() ? `?${qs}` : ""}`;
-  const res=  await adminAxios.get<AdminMusicRequestRow[]>(url);
-  return res.data;
-},
+    const url = `/v1/admin/music-requests${qs.toString() ? `?${qs}` : ""}`;
+    const res = await adminAxios.get<AdminMusicRequestRow[]>(url);
+    return res.data;
+  },
 
-adminGetMusicRequest: async (id: string) =>{
-  
-  const res = await adminAxios.get<AdminMusicRequestRow>(`/v1/admin/music-requests/${id}`);
-  return res.data;
-},
+  adminGetMusicRequest: async (id: string) => {
+    const res = await adminAxios.get<AdminMusicRequestRow>(
+      `/v1/admin/music-requests/${id}`,
+    );
+    return res.data;
+  },
 
-adminUpdateMusicRequest: async (id: string, body: UpdateMusicRequestBody)=> {
-  const res = await adminAxios.patch(`/v1/admin/music-requests/${id}`, body);
-  return res.data;
- 
-}
-}
+  adminUpdateMusicRequest: async (id: string, body: UpdateMusicRequestBody) => {
+    const res = await adminAxios.patch(`/v1/admin/music-requests/${id}`, body);
+    return res.data;
+  },
+};

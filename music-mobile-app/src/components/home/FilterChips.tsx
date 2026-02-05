@@ -17,8 +17,8 @@ export const FilterChips: React.FC = () => {
             key={label}
             className={
               active
-                ? "rounded-full bg-primary px-3 py-1.5"
-                : "rounded-full bg-surface-light px-3 py-1.5 dark:bg-surface-dark"
+                ? "rounded-lg bg-primary px-4 py-2"
+                : "rounded-lg bg-surface-light px-4 py-2 dark:bg-surface-dark"
             }
           >
             <Text

@@ -6,12 +6,15 @@ import "../global.css";
 import {
   useFonts,
   LeagueSpartan_700Bold,
+  
 } from "@expo-google-fonts/league-spartan";
+import {LeagueGothic_400Regular} from "@expo-google-fonts/league-gothic"
 import { View, ActivityIndicator } from "react-native";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     LeagueSpartan_700Bold,
+    LeagueGothic_400Regular
   });
 
   if (!fontsLoaded) {

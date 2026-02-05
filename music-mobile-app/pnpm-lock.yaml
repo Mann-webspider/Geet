@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@expo-google-fonts/league-gothic':
+        specifier: ^0.4.2
+        version: 0.4.2
       '@expo-google-fonts/league-spartan':
         specifier: ^0.4.2
         version: 0.4.2
@@ -730,6 +733,9 @@ packages:
   '@eslint/plugin-kit@0.4.1':
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@expo-google-fonts/league-gothic@0.4.2':
+    resolution: {integrity: sha512-hWdjyHf4yjnk2PSpvYEFvU2aUbZou/ttrYaMKj19WH6SH95BtNtEXBURggLZK+7GItD2l8N/fVzuMcr4YsFijQ==}
 
   '@expo-google-fonts/league-spartan@0.4.2':
     resolution: {integrity: sha512-ab+9zpXBOz09ymJIKTxlun7d3G7twGNg9Yo7mBC3vGxH047wz1uMevTmbqGk9/RF76wJvgzwA+MOGtEtqsxwZw==}
@@ -6675,6 +6681,8 @@ snapshots:
     dependencies:
       '@eslint/core': 0.17.0
       levn: 0.4.1
+
+  '@expo-google-fonts/league-gothic@0.4.2': {}
 
   '@expo-google-fonts/league-spartan@0.4.2': {}
 

@@ -65,13 +65,16 @@ export const playlists = pgTable(
 
     trackCount: integer("track_count").default(0).notNull(),
     totalDuration: integer("total_duration").default(0).notNull(), // seconds
+    isArtistPlaylist: boolean("is_artist_playlist").default(false).notNull(),
+    artistId: uuid("artist_id").references(() => artists.id, {
+      onDelete: "cascade",
+    }),
 
     // in database/schema.ts (playlist table)
-isEditorial: boolean("is_editorial").default(false).notNull(),
-editorialType: varchar("editorial_type", { length: 50 }), // "home_curated" | "trending" | null
-visibleOnHome: boolean("visible_on_home").default(false).notNull(),
-priority: integer("priority").default(0).notNull(),
-
+    isEditorial: boolean("is_editorial").default(false).notNull(),
+    editorialType: varchar("editorial_type", { length: 50 }), // "home_curated" | "trending" | null
+    visibleOnHome: boolean("visible_on_home").default(false).notNull(),
+    priority: integer("priority").default(0).notNull(),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -79,30 +82,34 @@ priority: integer("priority").default(0).notNull(),
   (table) => ({
     creatorIdx: index("idx_playlists_creator").on(table.creatorId),
     publicIdx: index("idx_playlists_public").on(table.isPublic),
-  })
+  }),
 );
 
 export const tracks = pgTable(
   "tracks",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    
+
     title: varchar("title", { length: 255 }).notNull(),
     artist: varchar("artist", { length: 255 }).notNull(),
+    artistId: uuid("artist_id").references(() => artists.id, {
+      onDelete: "set null",
+    }),
+
     album: varchar("album", { length: 255 }),
-    
+
     duration: integer("duration").notNull(), // seconds
-    
+
     fileUrl: varchar("file_url", { length: 512 }).notNull(), // S3/CDN URL
     coverArtUrl: varchar("cover_art_url", { length: 512 }),
-    
+
     genre: varchar("genre", { length: 100 }),
     releaseYear: integer("release_year"),
-    
+
     isExplicit: boolean("is_explicit").default(false),
-    
+
     playCount: integer("play_count").default(0).notNull(),
-    
+
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -110,7 +117,7 @@ export const tracks = pgTable(
     titleIdx: index("idx_tracks_title").on(table.title),
     artistIdx: index("idx_tracks_artist").on(table.artist),
     genreIdx: index("idx_tracks_genre").on(table.genre),
-  })
+  }),
 );
 
 export const playlistTracks = pgTable(
@@ -242,13 +249,19 @@ export const playbackEvents = pgTable(
 
     // optional context, keep flexible
     source: varchar("source", { length: 30 }).default("unknown").notNull(),
+    completedAt: timestamp("completed_at"), // when user finished playing
+    listenDuration: integer("listen_duration"), // seconds actually played
+    skipped: boolean("skipped").default(false).notNull(),
 
     startedAt: timestamp("started_at").defaultNow().notNull(),
   },
   (t) => ({
-    userStartedIdx: index("idx_playback_events_user_started").on(t.userId, t.startedAt),
+    userStartedIdx: index("idx_playback_events_user_started").on(
+      t.userId,
+      t.startedAt,
+    ),
     trackIdx: index("idx_playback_events_track").on(t.trackId),
-  })
+  }),
 );
 
 // -----------------------------
@@ -318,6 +331,79 @@ export const notifications = pgTable(
     userCreatedIdx: index("idx_notifications_user_created").on(t.userId, t.createdAt),
   })
 );
+
+// src/database/schema.ts
+export const artists = pgTable(
+  "artists",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name", { length: 255 }).notNull().unique(),
+    slug: varchar("slug", { length: 255 }).notNull().unique(),
+
+    bio: text("bio"),
+    imageUrl: varchar("image_url", { length: 512 }),
+    bgImageUrl: varchar("bg_image_url", { length: 512 }),
+
+    spotifyUrl: varchar("spotify_url", { length: 512 }),
+    youtubeUrl: varchar("youtube_url", { length: 512 }),
+
+    isVerified: boolean("is_verified").default(false).notNull(),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    nameIdx: index("idx_artists_name").on(t.name),
+    slugIdx: index("idx_artists_slug").on(t.slug),
+  }),
+);
+
+export const trackLikes = pgTable(
+  "track_likes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    userTrackIdx: index("idx_track_likes_user_track").on(t.userId, t.trackId),
+  }),
+);
+
+export const trackShares = pgTable("track_shares", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  trackId: uuid("track_id")
+    .notNull()
+    .references(() => tracks.id, { onDelete: "cascade" }),
+  platform: varchar("platform", { length: 50 }), // "whatsapp", "twitter", etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const trackSaves = pgTable(
+  "track_saves",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    userTrackIdx: index("idx_track_saves_user_track").on(t.userId, t.trackId),
+  }),
+);
+
 
 // Types
 export type MusicRequest = typeof musicRequests.$inferSelect;

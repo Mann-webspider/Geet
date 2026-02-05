@@ -4,9 +4,10 @@ import { ScrollView, View, Text, TouchableOpacity } from "react-native";
 type Card = { title: string; subtitle: string };
 
 const mockPlaylists: Card[] = [
-  { title: "Starlit Reverie", subtitle: "By Budariti • 8 songs" },
-  { title: "Midnight Confessions", subtitle: "Lo‑fi • 12 songs" },
-  { title: "Soft Echoes", subtitle: "Ambient • 16 songs" },
+  { title: "Starlit Reverie", subtitle: "Budariti" },
+  { title: "Midnight Confessions", subtitle: "Various Artists" },
+  { title: "Soft Echoes", subtitle: "Ambient Collective" },
+  { title: "Deep Focus", subtitle: "Geet Mix" },
 ];
 
 export const PlaylistRow: React.FC<{ onPressCard?: () => void }> = ({
@@ -21,21 +22,26 @@ export const PlaylistRow: React.FC<{ onPressCard?: () => void }> = ({
       <TouchableOpacity
         key={p.title}
         onPress={onPressCard}
-        className="w-60 rounded-2xl bg-surface-light px-4 py-3 dark:bg-background-dark/85"
+        className="w-28"
       >
-        <View className="mb-2 flex-row items-center">
-          <View className="mr-3 h-10 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-          <View className="flex-1">
-            <Text className="text-sm font-semibold text-text-light dark:text-text-dark">
-              {p.title}
-            </Text>
-            <Text className="text-[11px] text-muted-light dark:text-muted-dark">
-              {p.subtitle}
-            </Text>
-          </View>
+        {/* square cover box */}
+        <View className="mb-2 h-28 w-28 overflow-hidden rounded-2xl bg-surface-light dark:bg-background-dark/80">
+          {/* replace this with Image if you have real covers */}
+          <View className="h-full w-full bg-gradient-to-br from-primary/70 via-emerald-400/50 to-background-dark" />
         </View>
-        <Text className="text-[11px] text-muted-light dark:text-muted-dark">
-          Tap to open playlist.
+
+        {/* text outside the box */}
+        <Text
+          className="text-[13px] font-semibold text-text-light dark:text-text-dark"
+          numberOfLines={1}
+        >
+          {p.title}
+        </Text>
+        <Text
+          className="text-[11px] text-muted-light dark:text-muted-dark"
+          numberOfLines={1}
+        >
+          {p.subtitle}
         </Text>
       </TouchableOpacity>
     ))}

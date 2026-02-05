@@ -31,6 +31,12 @@ export function registerAdminRoutes(router: Router) {
     ...adminAuth,
     AdminTrackController.deleteTrack,
   );
+  router.patch(
+    "/v1/admin/tracks/:id/artist",
+    ...adminAuth,
+    AdminTrackController.setArtist,
+  );
+
 
   // Ingestion jobs
   router.post(
