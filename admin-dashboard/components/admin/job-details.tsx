@@ -75,7 +75,7 @@ export function JobDetailsView({
         <div className="rounded-lg border bg-white p-5">
           <div className="text-sm font-medium">Result track</div>
           <div className="mt-2 text-sm">
-            <Link className="underline" href={`/admin/tracks?view=${job.trackId}`}>
+            <Link className="underline" href={`/admin/tracks/${job.trackId}`}>
               View track ({job.trackId})
             </Link>
           </div>

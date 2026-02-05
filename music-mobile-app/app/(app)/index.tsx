@@ -1,80 +1,79 @@
-import React from 'react';
-import { View, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
-import { useAuthStore } from '../../src/store/auth.store';
-import { router } from 'expo-router';
+import React from "react";
+import { View, Text, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuthStore } from "../../src/store/auth.store";
+import { HomeSection } from "../../src/components/home/Section";
+import { FilterChips } from "../../src/components/home/FilterChips";
+import { HeroCard } from "../../src/components/home/HeroCard";
+import { PlaylistRow } from "../../src/components/home/PlaylistRow";
+import { TrackList } from "../../src/components/home/TrackList";
+import { HomeDock } from "../../src/components/home/HomeDock";
+import { router } from "expo-router";
 
 export default function HomeScreen() {
-  const { user, clearAuth } = useAuthStore();
-
-  const logout = async () => {
-    await clearAuth();
-    router.replace('/login');
-  };
+  const { user } = useAuthStore();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome, {user?.username ?? 'User'}!</Text>
-      
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => router.push('/(app)/library')}
-      >
-        <Text style={styles.cardIcon}>🎵</Text>
-        <Text style={styles.cardTitle}>My Playlists</Text>
-        <Text style={styles.cardSubtitle}>View and manage your music</Text>
-      </TouchableOpacity>
+    <SafeAreaView className="flex-1 bg-surface-light">
+      <View className="flex-1">
+        {/* gradient-like header */}
+        <View className="rounded-b-3xl bg-gradient-to-br from-purple-700 via-black to-black px-5 pb-4 pt-3">
+          {/* top row: avatar + icons (simplified) */}
+          <View className="mb-5 flex-row items-center justify-between">
+            <View className="flex-row items-center gap-3">
+              <View className="h-9 w-9 items-center justify-center rounded-full bg-primary">
+                <Text className="text-base font-semibold text-black">
+                  {user?.username?.[0]?.toUpperCase() ?? "G"}
+                </Text>
+              </View>
+              
+            </View>
+           
+          </View>
 
-      // in app/(app)/index.tsx
-<TouchableOpacity
-  style={styles.card}
-  onPress={() => router.push('/(app)/browse')}
->
-  <Text style={styles.cardIcon}>🔎</Text>
-  <Text style={styles.cardTitle}>Browse Tracks</Text>
-  <Text style={styles.cardSubtitle}>Find music to add to playlists</Text>
-</TouchableOpacity>
+          {/* filter chips */}
+          <FilterChips />
+        </View>
 
+        {/* main scroll content */}
+        <ScrollView
+          className="mt-4 px-5"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 80 }}
+        >
+          <HomeSection title="Curated & trending">
+            <HeroCard onPressPlaylist={() => router.push("/(app)/library")} />
+          </HomeSection>
 
-      <Button title="Log out" onPress={logout} color="#ff6b6b" />
-    </View>
+          <HomeSection
+            title="Top daily playlists"
+            onSeeAll={() => router.push("/(app)/library")}
+          >
+            <PlaylistRow onPressCard={() => router.push("/(app)/library")} />
+          </HomeSection>
+
+          <HomeSection
+            title="Recently listened"
+            onSeeAll={() => router.push("/(app)/library")}
+          >
+            <TrackList
+              items={["Lo‑fi Study", "Midnight Vibes", "Soft Echoes", "Deep Sleep"]}
+            />
+          </HomeSection>
+
+          <HomeSection
+            title="Popular now"
+            onSeeAll={() => router.push("/(app)/browse")}
+          >
+            <TrackList
+              items={["Top Global", "Top India", "Viral Today", "Charts Mix"]}
+            />
+          </HomeSection>
+        </ScrollView>
+
+        {/* bottom dock */}
+        <HomeDock />
+      </View>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 24,
-    marginBottom: 32,
-  },
-  card: {
-    backgroundColor: '#111',
-    borderRadius: 12,
-    padding: 24,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 32,
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  cardIcon: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
-  cardTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    color: '#999',
-    fontSize: 14,
-  },
-});

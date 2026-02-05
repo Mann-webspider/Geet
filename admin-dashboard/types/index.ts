@@ -1,4 +1,4 @@
-import { useParams } from 'next/navigation';
+import { useParams } from "next/navigation";
 export interface User {
   id: string;
   email: string;
@@ -18,13 +18,11 @@ export interface LoginResponse {
   };
 }
 
-
-
 export interface IngestionJob {
   id: string;
-  sourceType: 'youtube' | 'torrent' | 'manual';
+  sourceType: "youtube" | "torrent" | "manual";
   sourceInput: string;
-  status: 'pending' | 'downloading' | 'transcoding' | 'completed' | 'failed';
+  status: "pending" | "downloading" | "transcoding" | "completed" | "failed";
   extractedTitle?: string;
   extractedArtist?: string;
   extractedDuration?: number;
@@ -68,7 +66,7 @@ export type IngestionJobStatus =
 export type IngestionJobListItem = {
   admin: any;
   job: IngestionJobDetails;
-  track: any
+  track: any;
 };
 
 export type IngestionJobDetails = {
@@ -93,7 +91,12 @@ export type IngestionJobDetails = {
 };
 
 export type DashboardStats = {
-  users: { totalUsers: number; totalAdmins: number; totalBanned: number; totalPremium: number };
+  users: {
+    totalUsers: number;
+    totalAdmins: number;
+    totalBanned: number;
+    totalPremium: number;
+  };
   tracks: { totalTracks: number; totalDuration: number };
   playlists: { totalPlaylists: number };
   listens: { totalListens: number };
@@ -128,3 +131,44 @@ export type AdminUserDetailsResponse = {
     createdAt: string;
   }>;
 };
+
+export type MusicRequestStatus =
+  | "submitted"
+  | "in_review"
+  | "in_progress"
+  | "completed"
+  | "rejected";
+
+export type MusicRequestPriority = "low" | "normal" | "high";
+
+export type AdminMusicRequest = {
+  id: string;
+  userId: string;
+  songTitle: string;
+  artistName: string;
+  albumName: string | null;
+  notes: string | null;
+  priority: MusicRequestPriority;
+  status: MusicRequestStatus;
+  adminNote: string | null;
+  resolvedTrackId: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminUserLite = { id: string; username: string; email: string };
+
+export type TrackLite = { id: string; title: string; artist: string };
+
+export type AdminMusicRequestRow = {
+  request: AdminMusicRequest;
+  user: AdminUserLite | null;
+  track: TrackLite | null;
+};
+
+export type UpdateMusicRequestBody = Partial<{
+  status: MusicRequestStatus;
+  adminNote: string | null;
+  resolvedTrackId: string | null;
+}>;

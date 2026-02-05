@@ -9,6 +9,7 @@ import {
   index,
   uniqueIndex,
   integer,
+  jsonb
 } from "drizzle-orm/pg-core";
 
 // USERS TABLE
@@ -64,6 +65,13 @@ export const playlists = pgTable(
 
     trackCount: integer("track_count").default(0).notNull(),
     totalDuration: integer("total_duration").default(0).notNull(), // seconds
+
+    // in database/schema.ts (playlist table)
+isEditorial: boolean("is_editorial").default(false).notNull(),
+editorialType: varchar("editorial_type", { length: 50 }), // "home_curated" | "trending" | null
+visibleOnHome: boolean("visible_on_home").default(false).notNull(),
+priority: integer("priority").default(0).notNull(),
+
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -242,6 +250,82 @@ export const playbackEvents = pgTable(
     trackIdx: index("idx_playback_events_track").on(t.trackId),
   })
 );
+
+// -----------------------------
+// MUSIC REQUESTS + NOTIFICATIONS
+// -----------------------------
+
+export const musicRequests = pgTable(
+  "music_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    songTitle: varchar("song_title", { length: 255 }).notNull(),
+    artistName: varchar("artist_name", { length: 255 }).notNull(),
+    albumName: varchar("album_name", { length: 255 }),
+
+    notes: text("notes"),
+    priority: varchar("priority", { length: 20 }).default("normal").notNull(), // "low" | "normal" | "high"
+
+    // Your terms (not the PDF ones)
+    status: varchar("status", { length: 30 }).default("submitted").notNull(),
+    // submitted | in_review | in_progress | completed | rejected
+
+    adminNote: text("admin_note"),
+
+    resolvedTrackId: uuid("resolved_track_id").references(() => tracks.id, {
+      onDelete: "set null",
+    }),
+
+    resolvedAt: timestamp("resolved_at"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    userCreatedIdx: index("idx_music_requests_user_created").on(t.userId, t.createdAt),
+    statusCreatedIdx: index("idx_music_requests_status_created").on(t.status, t.createdAt),
+  })
+);
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+
+    type: varchar("type", { length: 80 }).notNull(), // e.g. "music_request_status"
+    title: varchar("title", { length: 200 }).notNull(),
+    message: text("message").notNull(),
+
+    // store extra metadata for the mobile app (requestId, trackId, etc.)
+    data: jsonb("data").$type<Record<string, any>>().default({}).notNull(),
+
+    isRead: boolean("is_read").default(false).notNull(),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    readAt: timestamp("read_at"),
+  },
+  (t) => ({
+    userReadIdx: index("idx_notifications_user_read").on(t.userId, t.isRead, t.createdAt),
+    userCreatedIdx: index("idx_notifications_user_created").on(t.userId, t.createdAt),
+  })
+);
+
+// Types
+export type MusicRequest = typeof musicRequests.$inferSelect;
+export type NewMusicRequest = typeof musicRequests.$inferInsert;
+
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;
+
 
 export type PlaybackEvent = typeof playbackEvents.$inferSelect;
 export type NewPlaybackEvent = typeof playbackEvents.$inferInsert;

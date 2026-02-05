@@ -1,5 +1,5 @@
-import { Response } from "express";
-import { AuthenticatedRequest } from "../../middleware/auth";
+import { type Response } from "express";
+import { type AuthenticatedRequest } from "../../middleware/auth";
 import { AdminUserRepository } from "./admin-user.repository";
 import { logger } from "../../config/logger";
 

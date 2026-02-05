@@ -40,16 +40,22 @@ export const authApi = {
 
   async login(payload: { email: string; password: string }): Promise<AuthResult> {
     try {
-      const res = await apiClient.post<SuccessEnvelope<{ id: string; email: string; username: string; token: string }>>(
+      console.log(payload);
+      
+      const res = await apiClient.post(
         '/v1/auth/login',
         payload,
       );
+      console.log(res);
+      
       if (res.status !== 'success') {
         throw new Error('Login failed');
       }
       return mapAuthResponse(res);
     } catch (e: any) {
       const err = e as ApiErrorShape;
+      console.log(err);
+      
       throw new Error(err.message || 'Login failed');
     }
   },

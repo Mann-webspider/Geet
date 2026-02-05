@@ -8,6 +8,10 @@ import type {
   DashboardStats,
   AdminUserListItem,
   PaginatedResponse,
+
+  AdminMusicRequestRow,
+  MusicRequestStatus,
+  UpdateMusicRequestBody,
 } from "@/types";
 
 export const adminApi = {
@@ -128,5 +132,30 @@ updateTrack: async (id: string, body: Partial<Track>) => {
   const res = await adminAxios.patch(`/v1/tracks/${id}`, body);
   return res.data;
 },
+adminListMusicRequests: async (params: {
+  status?: MusicRequestStatus;
+  limit?: number;
+  offset?: number;
+}) => {
+  const qs = new URLSearchParams();
+  if (params.status) qs.set("status", params.status);
+  if (typeof params.limit === "number") qs.set("limit", String(params.limit));
+  if (typeof params.offset === "number") qs.set("offset", String(params.offset));
 
-};
+  const url = `/v1/admin/music-requests${qs.toString() ? `?${qs}` : ""}`;
+  const res=  await adminAxios.get<AdminMusicRequestRow[]>(url);
+  return res.data;
+},
+
+adminGetMusicRequest: async (id: string) =>{
+  
+  const res = await adminAxios.get<AdminMusicRequestRow>(`/v1/admin/music-requests/${id}`);
+  return res.data;
+},
+
+adminUpdateMusicRequest: async (id: string, body: UpdateMusicRequestBody)=> {
+  const res = await adminAxios.patch(`/v1/admin/music-requests/${id}`, body);
+  return res.data;
+ 
+}
+}

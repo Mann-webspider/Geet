@@ -5,6 +5,8 @@ import { registerTrackRoutes } from "../modules/track/track.routes";
 import { registerListenRoutes } from "../modules/listen/listen.routes";
 import { registerAdminRoutes } from "../modules/admin/admin.routes";
 import { registerPlaybackRoutes } from "../modules/playback/playback.routes";
+import { registerMusicRequestRoutes } from "../modules/music-request/music-request.routes";
+import { registerNotificationRoutes } from "../modules/notification/notification.routes";
 
 
 export function setupRoutes(app: Express) {
@@ -16,5 +18,8 @@ export function setupRoutes(app: Express) {
   registerListenRoutes(router);
   registerAdminRoutes(router);
  registerPlaybackRoutes(router);
+   registerMusicRequestRoutes(router);
+   registerNotificationRoutes(router);
+
   app.use(router);
 }
