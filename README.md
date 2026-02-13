@@ -23,6 +23,16 @@ The platform focuses on low server load, smart caching, and user-driven music av
 - Support lyrics integration for karaoke-style singing
 
 ---
+## ScreenShots
+![user-welcome](/public/user/welcome-home.png)
+![user-playback](/public/user/playback-queue.png)
+
+### admin
+![admin-dashboard](/public/admin/dashboard.png)
+![admin-artist](/public/admin/artist.png)
+![admin-song](/public/admin/song.png)
+![admin-tracks](/public/admin/tracks.png)
+---
 ### Key Features
 #### 1.  Music Streaming
 - On-demand music streaming
